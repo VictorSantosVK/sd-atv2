@@ -76,7 +76,3 @@ Você verá logs no *producer* (partição/offset) e "notificações" no *consum
 - **Permissão no Windows** ao ativar venv: abra PowerShell como admin e execute `Set-ExecutionPolicy RemoteSigned -Scope CurrentUser`.
 
 ---
-
-## 📄 Licença
-
-MIT
