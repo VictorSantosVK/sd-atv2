@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Realtime Notify</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root {
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      }
+      body {
+        margin: 24px;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .log {
+        border: 1px solid #ddd;
+        padding: 12px;
+        border-radius: 8px;
+        min-height: 180px;
+        white-space: pre-wrap;
+        background: #fafafa;
+      }
+      input,
+      button,
+      select {
+        font-size: 14px;
+        padding: 6px 10px;
+      }
+      small {
+        color: #666;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Notificações em tempo real</h1>
+
+    <div class="row">
+      <label
+        >user_id:
+        <input id="uid" value="alice" />
+      </label>
+      <button id="connect">Conectar</button>
+      <button id="disconnect" disabled>Desconectar</button>
+    </div>
+
+    <div class="row">
+      <small
+        >Conecte como <b>alice</b>, <b>bob</b> ou <b>carol</b> para ver apenas
+        as suas notificações.</small
+      >
+    </div>
+
+    <div class="log" id="log"></div>
+
+    <script>
+      let ws = null;
+      const logBox = document.getElementById("log");
+      const btnConn = document.getElementById("connect");
+      const btnDisc = document.getElementById("disconnect");
+      const uidInput = document.getElementById("uid");
+
+      function log(msg) {
+        const time = new Date().toLocaleTimeString();
+        logBox.textContent += `[${time}] ${msg}\n`;
+        logBox.scrollTop = logBox.scrollHeight;
+      }
+
+      function connect() {
+        const uid = (uidInput.value || "alice").trim();
+        const url = `ws://localhost:8000/ws?user_id=${encodeURIComponent(uid)}`;
+        ws = new WebSocket(url);
+
+   ws.onopen = () => {
+  log(`WS aberto como "${uid}"`);
+  btnConn.disabled = true;
+  btnDisc.disabled = false;
+};
+ws.onmessage = (ev) => {
+  try {
+    const data = JSON.parse(ev.data);
+    if (data.info) {
+      log(`ℹ ${data.info}`);
+    } else if (data.user_id && data.order_id && data.status) {
+      log(`✅ user:${data.user_id} order:${data.order_id} status:${data.status}`);
+    } else {
+      log(`→ ${ev.data}`); // fallback: mostra bruto
+    }
+  } catch {
+    log(`→ ${ev.data}`);
+  }
+};
+
+        ws.onerror = (e) => {
+          log(`ERRO WebSocket (veja console)`);
+          console.error(e);
+        };
+        ws.onclose = () => {
+          log(`WS fechado`);
+          btnConn.disabled = false;
+          btnDisc.disabled = true;
+          ws = null;
+        };
+      }
+
+      function disconnect() {
+        if (ws) ws.close();
+      }
+
+      btnConn.addEventListener("click", connect);
+      btnDisc.addEventListener("click", disconnect);
+    </script>
+  </body>
+</html>
